@@ -28,6 +28,8 @@ jobs:
       - name: Create comment - Test Started
         uses: actions/github-script@v7
         id: pr-validation-start
+        env:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
 
