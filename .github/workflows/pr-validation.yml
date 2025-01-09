@@ -48,7 +48,7 @@ jobs:
 
             console.log({comments});
 
-            const botComments = comments.data.filter(comment => comment.user.login === BOT_NAME).shift();
+            const botComments = comments.filter(comment => comment.user.login === BOT_NAME).shift();
 
             let commentId = botComments ? botComments.id : null;
 
