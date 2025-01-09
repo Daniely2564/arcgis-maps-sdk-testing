@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions:
+  pull-requests: write
+  issues: write
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -17,7 +21,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: "14"
+          node-version: 22
 
       - name: Install dependencies
         run: npm install
@@ -26,15 +30,27 @@ jobs:
         run: npm run build
 
       - name: Create comment - Test Started
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         id: pr-validation-start
+        env:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
 
             const { BOT_NAME } = process.env;
             const prNumber = context.issue.number;
             const { owner, repo } = context.repo;
-            const botComments = comments.data.filter(comment => comment.user.login === BOT_NAME).shift()
+
+            const { data: comments } = await github.rest.pulls.listReviewComments({
+              owner,
+              repo,
+              pull_number: prNumber,
+            });
+
+            console.log({comments});
+
+            const botComments = comments.filter(comment => comment.user.login === BOT_NAME).shift();
+
             let commentId = botComments ? botComments.id : null;
 
             if(commentId){
@@ -45,13 +61,16 @@ jobs:
                     body: 'Workflow started'
                 });
             } else {
-                github.rest.issues.createComment({
+                const comment = await github.rest.issues.createComment({
                     owner,
                     repo,
                     issue_number: prNumber,
                     body: 'Workflow started'
                 }); 
+                commentId = comment.data.id;
             }
+
+            core.setOutput('commentId', commentId);
 
       - name: Run tests
         run: |
@@ -60,11 +79,13 @@ jobs:
           sleep 10
 
       - name: Notify Test Result
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         env:
           COMMENT_ID: ${{ steps.pr-validation-start.outputs.commentId }}
         with:
           script: |
+            const fs = require('fs');
+
             const { COMMENT_ID: commentId } = process.env
             const prNumber = context.issue.number;
             const { owner, repo } = context.repo;
@@ -73,5 +94,5 @@ jobs:
                 owner,
                 repo,
                 comment_id: commentId,
-                body: 'Tests ended successfully'
+                body: `Tests ended successfully. ${fs.readFileSync("./test-results.json", 'utf-8')}`
             });
