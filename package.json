@@ -1,0 +1,20 @@
+{
+  "name": "arcgis-maps-sdk-testing",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
+    "build": "echo Building..."
+  },
+  "devDependencies": {
+    "@vitest/ui": "latest",
+    "vite": "latest",
+    "vitest": "latest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
