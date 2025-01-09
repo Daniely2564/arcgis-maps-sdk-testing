@@ -26,7 +26,7 @@ jobs:
         run: npm run build
 
       - name: Create comment - Test Started
-        uses: actions/github-script@v4
+        uses: actions/github-script@v7
         id: pr-validation-start
         with:
           script: |
@@ -34,7 +34,14 @@ jobs:
             const { BOT_NAME } = process.env;
             const prNumber = context.issue.number;
             const { owner, repo } = context.repo;
-            const botComments = comments.data.filter(comment => comment.user.login === BOT_NAME).shift()
+            const comments = await github.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number: prNumber
+            });
+
+            const botComments = comments.data.filter(comment => comment.user.login === BOT_NAME).shift();
+
             let commentId = botComments ? botComments.id : null;
 
             if(commentId){
@@ -60,7 +67,7 @@ jobs:
           sleep 10
 
       - name: Notify Test Result
-        uses: actions/github-script@v4
+        uses: actions/github-script@v7
         env:
           COMMENT_ID: ${{ steps.pr-validation-start.outputs.commentId }}
         with:
